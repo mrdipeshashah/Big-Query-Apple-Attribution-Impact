@@ -1,0 +1,54 @@
+SELECT
+  date,
+  device_category,
+  os,
+  browser,
+  tracking_group,
+  visit_type,
+  -- Raw counts for Looker Studio aggregation
+  total_sessions,
+  direct_sessions,
+  -- % Direct Sessions
+  SAFE_DIVIDE(direct_sessions, total_sessions) AS percent_direct_sessions,
+  total_purchases,
+  -- Conversion Rate (CVR)
+  SAFE_DIVIDE(total_purchases, total_sessions) AS conversion_rate,
+  total_revenue,
+  -- Revenue Per Session (RPS)
+  SAFE_DIVIDE(total_revenue, total_sessions) AS revenue_per_session
+FROM (
+  SELECT
+    date,
+    device_category,
+    os,
+    browser,
+    tracking_group,
+    CASE 
+      WHEN session_number = 1 THEN '1. First Visit' 
+      ELSE '2. Returning Session' 
+    END AS visit_type,
+    count(DISTINCT session_id) AS total_sessions,
+    count(DISTINCT CASE WHEN source = '(direct)' THEN session_id END) AS direct_sessions,
+    sum(is_purchase) AS total_purchases,
+    sum(revenue) AS total_revenue
+  FROM (
+    SELECT
+      parse_date('%Y%m%d', event_date) AS date,
+      device.category AS device_category,
+      device.operating_system AS os,
+      device.web_info.browser AS browser,
+      CASE 
+        WHEN device.operating_system IN ('iOS', 'Macintosh') OR device.web_info.browser = 'Safari' THEN 'Apple/ITP'
+        ELSE 'Other (Control)'
+      END AS tracking_group,
+      concat(user_pseudo_id, cast((select value.int_value from unnest(event_params) where key = 'ga_session_id') as string)) AS session_id,
+      (select value.int_value from unnest(event_params) where key = 'ga_session_number') AS session_number,
+      (select value.string_value from unnest(event_params) where key = 'source') AS source,
+      if(event_name = 'purchase', 1, 0) AS is_purchase,
+      coalesce(ecommerce.purchase_revenue, 0) AS revenue
+    FROM `enter.tablename_123456.events_*`  
+    WHERE _TABLE_SUFFIX BETWEEN '20250101' AND '20270131'
+  )
+  GROUP BY 1, 2, 3, 4, 5, 6
+)
+ORDER BY date DESC, tracking_group, visit_type
