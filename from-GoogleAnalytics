@@ -7,7 +7,7 @@ SELECT
   visit_type,
   total_sessions,
   direct_sessions,
-  SAFE_DIVIDE(direct_sessions, total_sessions) AS percent_direct_sessions,
+  LEAST(1.0, SAFE_DIVIDE(direct_sessions, total_sessions)) AS percent_direct_sessions,
   total_purchases,
   SAFE_DIVIDE(total_purchases, total_sessions) AS conversion_rate,
   total_revenue,
@@ -42,7 +42,7 @@ FROM (
       (select value.string_value from unnest(event_params) where key = 'source') AS source,
       if(event_name = 'purchase', 1, 0) AS is_purchase,
       coalesce(ecommerce.purchase_revenue, 0) AS revenue
-    FROM `enter.tablename_123456.events_*`  
+    FROM `enter.tablename_123456.events_*` 
     WHERE _TABLE_SUFFIX BETWEEN '20250101' AND '20270131'
   )
   GROUP BY 1, 2, 3, 4, 5, 6
