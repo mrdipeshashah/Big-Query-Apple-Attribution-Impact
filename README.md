@@ -1,0 +1,1 @@
+I have created a Big Query code using Google Analytics raw data to understand the impact that Apple and IOS is having on Attributon data. To better understand the impact it has segmented by Tracking Group: Apple v Others(Control)  
