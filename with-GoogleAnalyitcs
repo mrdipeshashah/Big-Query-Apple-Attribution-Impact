@@ -1,0 +1,41 @@
+SELECT
+  date,
+  device_category,
+  os,
+  browser,
+  tracking_group,
+  -- Grouping by visit type to see if attribution 'decays' on return visits
+  CASE 
+    WHEN session_number = 1 THEN '1. First Visit' 
+    ELSE '2. Returning Session' 
+  END AS visit_type,
+  -- Raw counts for Looker Studio aggregation
+  count(DISTINCT session_id) AS total_sessions,
+  count(DISTINCT CASE WHEN source = '(direct)' THEN session_id END) AS direct_sessions,
+  sum(is_purchase) AS total_purchases,
+  sum(revenue) AS total_revenue
+FROM (
+  SELECT
+    parse_date('%Y%m%d', event_date) AS date,
+    device.category AS device_category,
+    device.operating_system AS os,
+    device.web_info.browser AS browser,
+    -- Apple/ITP Logic
+    CASE 
+      WHEN device.operating_system IN ('iOS', 'Macintosh') OR device.web_info.browser = 'Safari' THEN 'Apple/ITP'
+      ELSE 'Other (Control)'
+    END AS tracking_group,
+    -- Unique Session ID
+    concat(user_pseudo_id, cast((select value.int_value from unnest(event_params) where key = 'ga_session_id') as string)) AS session_id,
+    -- Session Number
+    (select value.int_value from unnest(event_params) where key = 'ga_session_number') AS session_number,
+    -- Traffic Source
+    (select value.string_value from unnest(event_params) where key = 'source') AS source,
+    -- Performance Flags
+    if(event_name = 'purchase', 1, 0) AS is_purchase,
+    coalesce(ecommerce.purchase_revenue, 0) AS revenue
+  FROM `enter.tablename_123456.events_*` 
+  WHERE _TABLE_SUFFIX BETWEEN '20250101' AND '20270131'
+)
+GROUP BY 1, 2, 3, 4, 5, 6
+ORDER BY date DESC, tracking_group, visit_type
