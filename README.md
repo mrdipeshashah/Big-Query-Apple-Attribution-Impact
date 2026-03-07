@@ -2,5 +2,5 @@ This repository contains Big Query code using Google Analytics raw data to under
 
 If Google Analytics is already connected to Big Query, then it's a pretty quick to set-up 
   - Cooy and paste the BQ code - remember to udpate line 45 with the right project + table and save the view 
-  - The looker studio dashboard (using dummy data) visualsing how the data should look.
+  - The looker studio dashboard visualsing how the data should look.
       - Make a copy of the dashboard and go to Resources > Managed added data source > find the saved view > for each scorecard, table and chart select the saved view 
