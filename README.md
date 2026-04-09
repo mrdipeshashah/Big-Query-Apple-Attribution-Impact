@@ -1,4 +1,4 @@
-# OVERIVEW
+# OVERVIEW
 
 This repository contains Big Query code using Google Analytics raw data to understand the impact that Apple and IOS is having on Attributon data with a high % of returning visitors on Apple are being tracked as Direct. 
 
